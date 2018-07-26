@@ -78,7 +78,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="dinghaisheng," />
 
 
 
@@ -94,13 +94,20 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="huyateam">
-<meta property="og:url" content="https://huyateam.github.io/index.html">
+<meta name="description" content="iOS开发过程或者线上版本经常有Crash崩溃在objc_msgSend、objc_retain、objc_release等方法，这些都是典型等Zombie问题，在开发过程可以使用Instruments工具定位，但对于线上问题或者很难复的问题Instruments就很难定位了，如果能主动捕捉Zombie对象，并且Trace Zombie对象信息和释放栈，那就很容易分析问题了。本文介绍一种主动监控">
+<meta name="keywords" content="dinghaisheng">
+<meta property="og:type" content="article">
+<meta property="og:title" content="zombie_monitor">
+<meta property="og:url" content="https://huyateam.github.io/2018/07/26/zombie-monitor/index.html">
 <meta property="og:site_name" content="huyateam">
+<meta property="og:description" content="iOS开发过程或者线上版本经常有Crash崩溃在objc_msgSend、objc_retain、objc_release等方法，这些都是典型等Zombie问题，在开发过程可以使用Instruments工具定位，但对于线上问题或者很难复的问题Instruments就很难定位了，如果能主动捕捉Zombie对象，并且Trace Zombie对象信息和释放栈，那就很容易分析问题了。本文介绍一种主动监控">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://huyateam.github.io/2018/07/26/zombie-monitor/zombie_struct.jpg">
+<meta property="og:updated_time" content="2018-07-26T06:53:24.106Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="huyateam">
+<meta name="twitter:title" content="zombie_monitor">
+<meta name="twitter:description" content="iOS开发过程或者线上版本经常有Crash崩溃在objc_msgSend、objc_retain、objc_release等方法，这些都是典型等Zombie问题，在开发过程可以使用Instruments工具定位，但对于线上问题或者很难复的问题Instruments就很难定位了，如果能主动捕捉Zombie对象，并且Trace Zombie对象信息和释放栈，那就很容易分析问题了。本文介绍一种主动监控">
+<meta name="twitter:image" content="https://huyateam.github.io/2018/07/26/zombie-monitor/zombie_struct.jpg">
 
 
 
@@ -129,13 +136,13 @@
 
 
 
-  <link rel="canonical" href="https://huyateam.github.io/"/>
+  <link rel="canonical" href="https://huyateam.github.io/2018/07/26/zombie-monitor/"/>
 
 
 
 
 
-  <title>huyateam</title>
+  <title>zombie_monitor | huyateam</title>
   
 
 
@@ -160,9 +167,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-   page-home 
- ">
+  <div class="container sidebar-position-left page-post-detail ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -245,9 +250,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -277,9 +282,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/07/26/zombie-monitor/" itemprop="url">zombie_monitor</a></h1>
+          <h1 class="post-title" itemprop="name headline">zombie_monitor</h1>
         
 
         <div class="post-meta">
@@ -332,9 +335,7 @@
       
 
       
-        
-          
-            <blockquote>
+        <blockquote>
 <p>iOS开发过程或者线上版本经常有Crash崩溃在objc_msgSend、objc_retain、objc_release等方法，这些都是典型等Zombie问题，在开发过程可以使用Instruments工具定位，但对于线上问题或者很难复的问题Instruments就很难定位了，如果能主动捕捉Zombie对象，并且Trace Zombie对象信息和释放栈，那就很容易分析问题了。本文介绍一种主动监控Zombie对象方案，方案已经上线验证一段时间了，并且已经在github上开源了。</p>
 </blockquote>
 <h2 id="为什么使用ARC还会有Zombie问题？"><a href="#为什么使用ARC还会有Zombie问题？" class="headerlink" title="为什么使用ARC还会有Zombie问题？"></a>为什么使用ARC还会有Zombie问题？</h2><p>可能很多同学觉得使用ARC和weak属性后就不会有Zombie问题了，但App上线后还是会发现很多Zombie问题，主要是因为：</p>
@@ -375,8 +376,6 @@
 <p>具体源码请移步<strong><a href="https://github.com/AlexTing0/DDZombieMonitor" target="_blank" rel="noopener">「github DDZombieMonitor」</a></strong>   </p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><em><a href="http://sealiesoftware.com/blog/archive/2008/09/22/objc_explain_So_you_crashed_in_objc_msgSend.html" target="_blank" rel="noopener">So you crashed in objc_msgSend()</a></em></p>
 
-          
-        
       
     </div>
     
@@ -388,17 +387,45 @@
     
 
     
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    
+      
+      <a target=_blank href="https://github.com/AlexTing0" title="dinghaisheng">dinghaisheng</a>
+      
+    
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://huyateam.github.io/2018/07/26/zombie-monitor/" title="zombie_monitor">https://huyateam.github.io/2018/07/26/zombie-monitor/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/dinghaisheng/" rel="tag"># dinghaisheng</a>
+          
+        </div>
+      
+
+      
+      
+      
 
       
 
       
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -408,10 +435,11 @@
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -419,6 +447,10 @@
 
 
           
+  <div class="comments" id="comments">
+    
+  </div>
+
 
         </div>
         
@@ -439,8 +471,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/images/avatar.png"
@@ -493,6 +534,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么使用ARC还会有Zombie问题？"><span class="nav-number">1.</span> <span class="nav-text">为什么使用ARC还会有Zombie问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#内存优化"><span class="nav-number">1.0.1.</span> <span class="nav-text">内存优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#开源"><span class="nav-number">1.0.2.</span> <span class="nav-text">开源</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#性能影响和稳定性"><span class="nav-number">1.0.3.</span> <span class="nav-text">性能影响和稳定性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -606,10 +663,10 @@
   
 
   
-    <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
 <script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
 
-  
+
 
   
 
