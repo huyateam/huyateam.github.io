@@ -103,7 +103,7 @@
 <meta property="og:description" content="iOS开发过程或者线上版本经常有Crash崩溃在objc_msgSend、objc_retain、objc_release等方法，这些都是典型等Zombie问题，在开发过程可以使用Instruments工具定位，但对于线上问题或者很难复的问题Instruments就很难定位了，如果能主动捕捉Zombie对象，并且Trace Zombie对象信息和释放栈，那就很容易分析问题了。本文介绍一种主动监控">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://huyateam.github.io/2018/07/26/zombie-monitor/zombie_struct.jpg">
-<meta property="og:updated_time" content="2018-07-26T06:53:24.106Z">
+<meta property="og:updated_time" content="2018-07-26T07:24:13.925Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="zombie_monitor">
 <meta name="twitter:description" content="iOS开发过程或者线上版本经常有Crash崩溃在objc_msgSend、objc_retain、objc_release等方法，这些都是典型等Zombie问题，在开发过程可以使用Instruments工具定位，但对于线上问题或者很难复的问题Instruments就很难定位了，如果能主动捕捉Zombie对象，并且Trace Zombie对象信息和释放栈，那就很容易分析问题了。本文介绍一种主动监控">
@@ -341,15 +341,23 @@
 <h2 id="为什么使用ARC还会有Zombie问题？"><a href="#为什么使用ARC还会有Zombie问题？" class="headerlink" title="为什么使用ARC还会有Zombie问题？"></a>为什么使用ARC还会有Zombie问题？</h2><p>可能很多同学觉得使用ARC和weak属性后就不会有Zombie问题了，但App上线后还是会发现很多Zombie问题，主要是因为：</p>
 <ul>
 <li>还有很多地方使用assign<br>由于历史原因，系统库还有地方使用assign，最典型的就是<strong>iOS8下UITableView delegate和dataSource</strong>，相信大部分iOS开发都遇到过这个问题导致的Crash，还有就是自己都代码也可能使用assign。</li>
-<li>线程安全问题<br>虽然ARC下可以不用考虑对象释放问题，但如果不是线程安全的话，就算使用weak还是可能导致Zombie问题。<br>##如何分析Zombie问题？<br>大多数Zombie问题都是Crash在objc_msgSend方法，一般都是消息转发的时候发生EXC_BAD_ACCESS错误，但从堆栈上无法看出是什么对象、什么方法出了问题，并且很多时候也不是Crash在我们自己但代码附近，这种情况就更难分析了。<br>我们知道调用<strong>objc_msgSend方法的时候前面几个参数是通过x0~x7寄存器传递的，其中x0是self指针，x1是SEL</strong>，如果能知道Crash在哪个SEL，结合代码有可能进一步分析出哪里Crash了。SEL是指向C string的指针，并且C string 保存在__TEXT段，所以结合dSYM和x1寄存器，正常情况下是可以解析出SEL的，具体解析方法可以参考<a href="http://sealiesoftware.com/blog/archive/2008/09/22/objc_explain_So_you_crashed_in_objc_msgSend.html" target="_blank" rel="noopener">「So you crashed in objc_msgSend()」</a>。<br>如果SEL是很常见的方法，即使知道SEL还是很分析出问题，这个时候如果能知道Zombie对象类名，对象释放栈的话就能很容易分析出问题了，但仅通过Crash log文件是无法获取这些信息的，这也是大多数Zombie问题很难定位的原因。<br>其实除了Crash，Zombie也可能只是导致逻辑错误，这个时候就更难定位问题了，因为往往问题现场离对象释放的地方很远。<br>##自动监控Zombie对象方案<br>如果能主动监测Zombie，在第一次使用Zombie对象的时候就发现问题，可以进行上报，也可以主动触发Crash，同时在释放对象的时候保存对象信息，可以知道到底是哪个对象出现了问题，这样可以极大的提高Zombie问题的发现率和解决率。<br>要在线上版本实时监控，监控组件必须对App性能影响很小，在设计对时候从下面点考虑：</li>
+<li>线程安全问题<br>虽然ARC下可以不用考虑对象释放问题，但如果不是线程安全的话，就算使用weak还是可能导致Zombie问题。</li>
+</ul>
+<h2 id="如何分析Zombie问题？"><a href="#如何分析Zombie问题？" class="headerlink" title="如何分析Zombie问题？"></a>如何分析Zombie问题？</h2><p>大多数Zombie问题都是Crash在objc_msgSend方法，一般都是消息转发的时候发生EXC_BAD_ACCESS错误，但从堆栈上无法看出是什么对象、什么方法出了问题，并且很多时候也不是Crash在我们自己但代码附近，这种情况就更难分析了。<br>我们知道调用<strong>objc_msgSend方法的时候前面几个参数是通过x0~x7寄存器传递的，其中x0是self指针，x1是SEL</strong>，如果能知道Crash在哪个SEL，结合代码有可能进一步分析出哪里Crash了。SEL是指向C string的指针，并且C string 保存在__TEXT段，所以结合dSYM和x1寄存器，正常情况下是可以解析出SEL的，具体解析方法可以参考<a href="http://sealiesoftware.com/blog/archive/2008/09/22/objc_explain_So_you_crashed_in_objc_msgSend.html" target="_blank" rel="noopener">「So you crashed in objc_msgSend()」</a>。<br>如果SEL是很常见的方法，即使知道SEL还是很分析出问题，这个时候如果能知道Zombie对象类名，对象释放栈的话就能很容易分析出问题了，但仅通过Crash log文件是无法获取这些信息的，这也是大多数Zombie问题很难定位的原因。<br>其实除了Crash，Zombie也可能只是导致逻辑错误，这个时候就更难定位问题了，因为往往问题现场离对象释放的地方很远。</p>
+<h2 id="自动监控Zombie对象方案"><a href="#自动监控Zombie对象方案" class="headerlink" title="自动监控Zombie对象方案"></a>自动监控Zombie对象方案</h2><p>如果能主动监测Zombie，在第一次使用Zombie对象的时候就发现问题，可以进行上报，也可以主动触发Crash，同时在释放对象的时候保存对象信息，可以知道到底是哪个对象出现了问题，这样可以极大的提高Zombie问题的发现率和解决率。<br>要在线上版本实时监控，监控组件必须对App性能影响很小，在设计对时候从下面点考虑：</p>
+<ul>
 <li>Trace Zombie对象类名、selector、释放栈信息</li>
 <li>内存可控</li>
 <li>监控策略可控</li>
-<li>对cpu影响要很小<br>####如何监控<br>要监控Zombie对象，就必须监控访问已经释放对对象，所以可以从下面几个点思考：</li>
+<li>对cpu影响要很小</li>
 </ul>
+<h4 id="如何监控"><a href="#如何监控" class="headerlink" title="如何监控"></a>如何监控</h4><p>要监控Zombie对象，就必须监控访问已经释放对对象，所以可以从下面几个点思考：</p>
 <ol>
 <li>如何监控对象释放<br>Objective-C上可以方便的使用Method swizzling hook dealloc方法监控对象的释放，Method swizzling只能监控Objective-C对象的释放；也可以在更底层hook free，使用Fishhook可以很方便的hook free方法，hook free可以监控所以对象的释放。</li>
-<li>如何监控访问已经释放的对象<br>可以使用Objective-C Runtime消息转发机制监控Objective-C对象访问，要监控C/C++对象访问复杂些，一种方法是对象释放后使用vm_protect设置虚拟内存为不可读写，不过vm_protect只能以内存页为单位进行设置。<br>####最终方案<br>因为iOS App上大部分自定义对象都是Objective-C对象，所以最终使用Method swizzling hook dealloc方法监控对象的释放，并且使用Runtime消息转发机制监控Objective-C对象访问，主要过程如下：</li>
+<li>如何监控访问已经释放的对象<br>可以使用Objective-C Runtime消息转发机制监控Objective-C对象访问，要监控C/C++对象访问复杂些，一种方法是对象释放后使用vm_protect设置虚拟内存为不可读写，不过vm_protect只能以内存页为单位进行设置。</li>
+</ol>
+<h4 id="最终方案"><a href="#最终方案" class="headerlink" title="最终方案"></a>最终方案</h4><p>因为iOS App上大部分自定义对象都是Objective-C对象，所以最终使用Method swizzling hook dealloc方法监控对象的释放，并且使用Runtime消息转发机制监控Objective-C对象访问，主要过程如下：</p>
+<ol>
 <li>hook dealloc方法，dealloc时只析构对象，不释放内存，更换isa指针指向ZombieHandler Class</li>
 <li>延迟释放对象</li>
 <li>ZombieHandler Class拦截消息，从而监控使Zombie对象<br>方案模块结构如下图：</li>
@@ -544,7 +552,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么使用ARC还会有Zombie问题？"><span class="nav-number">1.</span> <span class="nav-text">为什么使用ARC还会有Zombie问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#内存优化"><span class="nav-number">1.0.1.</span> <span class="nav-text">内存优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#开源"><span class="nav-number">1.0.2.</span> <span class="nav-text">开源</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#性能影响和稳定性"><span class="nav-number">1.0.3.</span> <span class="nav-text">性能影响和稳定性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么使用ARC还会有Zombie问题？"><span class="nav-number">1.</span> <span class="nav-text">为什么使用ARC还会有Zombie问题？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何分析Zombie问题？"><span class="nav-number">2.</span> <span class="nav-text">如何分析Zombie问题？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自动监控Zombie对象方案"><span class="nav-number">3.</span> <span class="nav-text">自动监控Zombie对象方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#如何监控"><span class="nav-number">3.0.1.</span> <span class="nav-text">如何监控</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#最终方案"><span class="nav-number">3.0.2.</span> <span class="nav-text">最终方案</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存优化"><span class="nav-number">3.0.3.</span> <span class="nav-text">内存优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#开源"><span class="nav-number">3.0.4.</span> <span class="nav-text">开源</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#性能影响和稳定性"><span class="nav-number">3.0.5.</span> <span class="nav-text">性能影响和稳定性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
             
 
           </div>
